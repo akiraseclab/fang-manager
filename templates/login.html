@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>房东登录</title>
+<style>
+  :root {
+    --bg:#f6f6f4; --surface:#ffffff;
+    --ink:#1f1e1a; --ink-2:rgba(31,30,26,.64); --ink-3:rgba(31,30,26,.44);
+    --brand:#146c43; --brand-deep:#0f5a37; --brand-soft:#e7f1eb;
+    --price:#d9382e;
+    --shadow:0 1px 2px rgba(31,30,26,.05), 0 10px 30px rgba(31,30,26,.07);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; -webkit-font-smoothing:antialiased; }
+  button, input { font-family:inherit; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  .card { background:var(--surface); border-radius:20px; box-shadow:var(--shadow); width:100%; max-width:360px; padding:44px 32px 32px; }
+  .mark { width:60px; height:60px; border-radius:19px; background:var(--brand); display:inline-flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(20,108,67,.3); }
+  h1 { font-size:21px; font-weight:800; letter-spacing:-.3px; margin-top:18px; }
+  .sub { font-size:13px; color:var(--ink-3); margin-top:7px; }
+  .err { background:#fdeceb; color:#d9382e; font-size:13px; border-radius:12px; padding:10px 14px; margin:20px 0 0; text-align:left; }
+  .field { margin-top:16px; text-align:left; }
+  .field label { display:block; font-size:13px; font-weight:500; color:var(--ink-2); margin-bottom:6px; }
+  .field input { width:100%; height:48px; border:1px solid rgba(31,30,26,.14); border-radius:14px; background:#faf9f6; font-size:16px; color:var(--ink); padding:0 16px; transition:border-color .2s, background .2s; }
+  .field input:focus { border-color:var(--brand); outline:none; background:#fff; }
+  .submit { width:100%; height:50px; border:none; border-radius:999px; background:var(--brand); color:#fff; font-size:16px; font-weight:600; cursor:pointer; margin-top:26px; transition:transform .2s var(--ease), background .2s; }
+  .submit:hover { background:var(--brand-deep); }
+  .submit:active { transform:scale(.98); }
+  .foot { font-size:13px; color:var(--ink-3); margin-top:22px; }
+  .foot a { color:var(--brand); font-weight:600; text-decoration:none; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="mark">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+  </div>
+  <h1>房东登录</h1>
+  <p class="sub">管理你的房源，生成出租二维码</p>
+
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+  <form method="post">
+    <div class="field">
+      <label>手机号</label>
+      <input type="tel" name="phone" placeholder="注册时填写的手机号" required autofocus>
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input type="password" name="password" placeholder="请输入密码" required>
+    </div>
+    <button type="submit" class="submit">登 录</button>
+  </form>
+
+  <p class="foot">还没有账号？<a href="{{ url_for('register') }}">注册成为房东</a></p>
+</div>
+
+</body>
+</html>

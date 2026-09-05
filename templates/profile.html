@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>个人资料</title>
+<style>
+  :root {
+    --bg:#f6f6f4; --surface:#ffffff;
+    --ink:#1f1e1a; --ink-2:rgba(31,30,26,.64); --ink-3:rgba(31,30,26,.44);
+    --brand:#146c43; --brand-deep:#0f5a37; --brand-soft:#e7f1eb;
+    --price:#d9382e;
+    --line:rgba(31,30,26,.08);
+    --shadow:0 1px 2px rgba(31,30,26,.05), 0 10px 30px rgba(31,30,26,.07);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:40px; -webkit-font-smoothing:antialiased; }
+  button, input { font-family:inherit; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  .page { max-width:560px; margin:0 auto; padding:0 14px; }
+  .hd { display:flex; align-items:center; gap:12px; padding:22px 4px 20px; }
+  .back { width:40px; height:40px; border-radius:999px; background:var(--surface); box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; color:var(--ink); text-decoration:none; flex-shrink:0; }
+  .hd h1 { font-size:19px; font-weight:700; flex:1; }
+  .card { background:var(--surface); border-radius:16px; box-shadow:var(--shadow); padding:22px 20px; }
+  .me { display:flex; align-items:center; gap:14px; padding-bottom:18px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .avatar { width:56px; height:56px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-size:22px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .me .phone { font-size:13px; color:var(--ink-3); margin-top:3px; font-feature-settings:"tnum"; }
+  .field { margin-top:14px; text-align:left; }
+  .field label { display:block; font-size:13px; font-weight:500; color:var(--ink-2); margin-bottom:6px; }
+  .field input { width:100%; height:46px; border:1px solid rgba(31,30,26,.14); border-radius:12px; background:#faf9f6; font-size:15px; color:var(--ink); padding:0 14px; transition:border-color .2s, background .2s; }
+  .field input:focus { border-color:var(--brand); outline:none; background:#fff; }
+  .sep { height:1px; background:var(--line); margin:22px 0 4px; }
+  .sec-hint { font-size:13px; color:var(--ink-3); padding:14px 0 2px; font-weight:600; letter-spacing:.04em; }
+  .ok { background:var(--brand-soft); color:var(--brand); font-size:13px; border-radius:12px; padding:10px 14px; margin-bottom:16px; font-weight:500; }
+  .err { background:#fdeceb; color:#d9382e; font-size:13px; border-radius:12px; padding:10px 14px; margin-bottom:16px; }
+  .submit { width:100%; height:48px; border:none; border-radius:999px; background:var(--brand); color:#fff; font-size:15px; font-weight:600; cursor:pointer; margin-top:24px; transition:transform .2s var(--ease), background .2s; }
+  .submit:active { transform:scale(.98); }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hd">
+    <a class="back" href="{{ url_for('dashboard') }}" aria-label="返回工作台">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </a>
+    <h1>个人资料</h1>
+  </div>
+
+  <div class="card">
+    <div class="me">
+      <div class="avatar">{{ (me['name'] or '房')[:1] }}</div>
+      <div>
+        <div style="font-size:17px; font-weight:700;">{{ me['name'] or '房东' }}</div>
+        <div class="phone">{{ me['phone'] }}</div>
+      </div>
+    </div>
+
+    {% if saved %}<div class="ok">资料已保存</div>{% endif %}
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="err">{{ m }}</div>{% endfor %}{% endwith %}
+    {% if request.args.get('err') == 'qr_format' %}<div class="err">二维码图片格式无效，请上传 JPG / PNG 截图</div>{% endif %}
+
+    <form method="post">
+      <div class="field">
+        <label>姓名（租客可见）</label>
+        <input name="name" value="{{ me['name'] }}">
+      </div>
+      <div class="field">
+        <label>微信号（租客可复制添加）</label>
+        <input name="wechat_id" value="{{ me['wechat_id'] }}" placeholder="填写后租客页显示复制按钮">
+      </div>
+
+      <div class="field">
+        <label>微信二维码（租客页可直接扫码添加）</label>
+        <div style="display:flex; align-items:center; gap:14px; margin-top:4px;">
+          {% if me['wechat_qr'] %}
+          <img src="/wxqr/{{ me['id'] }}?t={{ range(1000) | random }}" alt="微信二维码"
+               style="width:96px; height:96px; border-radius:12px; object-fit:cover; border:1px solid var(--line);">
+          {% else %}
+          <div style="width:96px; height:96px; border-radius:12px; border:1.5px dashed rgba(31,30,26,.2); display:flex; align-items:center; justify-content:center; color:var(--ink-3); font-size:11px; text-align:center; line-height:1.5;">暂未<br>上传</div>
+          {% endif %}
+          <div style="flex:1;">
+            <form method="post" action="{{ url_for('upload_wechat_qr') }}" enctype="multipart/form-data" id="qrForm">
+              <button type="button" class="submit" style="margin-top:0; height:40px; font-size:13.5px; width:100%;"
+                      onclick="document.getElementById('qrFile').click()">
+                {{ '更换二维码' if me['wechat_qr'] else '上传二维码' }}
+              </button>
+              <input type="file" id="qrFile" name="qr" accept="image/jpeg,image/png,image/webp" style="display:none"
+                     onchange="if(this.files.length){ this.form.submit(); }">
+            </form>
+            {% if me['wechat_qr'] %}
+            <form method="post" action="{{ url_for('remove_wechat_qr') }}">
+              <button type="submit" style="background:none; border:none; color:#d9382e; font-size:12.5px; padding:8px 0 0; cursor:pointer;">删除二维码</button>
+            </form>
+            {% endif %}
+            <div style="font-size:11.5px; color:var(--ink-3); margin-top:6px; line-height:1.6;">在微信「我 → 二维码名片」保存自己的二维码图片后上传，租客扫码即可添加你</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="sec-hint">修改密码（不改请留空）</div>
+      <div class="field">
+        <label>原密码</label>
+        <input type="password" name="old_password" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>新密码（至少 6 位）</label>
+        <input type="password" name="new_password" autocomplete="new-password" minlength="6">
+      </div>
+
+      <button type="submit" class="submit">保存资料</button>
+    </form>
+  </div>
+
+</div>
+</body>
+</html>

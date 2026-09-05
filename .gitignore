@@ -1,0 +1,28 @@
+# 本地数据与隐私（永不提交）
+fang.db
+secret.txt
+DEPLOY.local.md
+*.local.conf
+wx_*.html
+
+# 媒体与生成物
+media_test/
+media_seed/
+shots/
+*.docx
+*.pdf
+
+# Node / 构建产物
+node_modules/
+docx_build/
+package.json
+package-lock.json
+verify_*.js
+test_video_live.js
+test_app.js
+test_ui.js
+test_func.py
+seed_test.py
+seed_specs.py
+__pycache__/
+*.pyc

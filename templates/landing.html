@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>{{ prop.name }}</title>
+<style>
+  :root {
+    --bg:#f6f6f4; --surface:#ffffff;
+    --ink:#1f1e1a; --ink-2:rgba(31,30,26,.64); --ink-3:rgba(31,30,26,.44);
+    --brand:#146c43; --brand-deep:#0f5a37; --brand-soft:#e7f1eb;
+    --price:#d9382e; --price-soft:#fdeceb;
+    --line:rgba(31,30,26,.08);
+    --r:14px;
+    --shadow:0 1px 2px rgba(31,30,26,.05), 0 10px 30px rgba(31,30,26,.07);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    padding-bottom:calc(86px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  button { font-family:inherit; }
+  button:focus-visible, a:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+
+  /* gallery */
+  .gallery { position:relative; width:100%; aspect-ratio:4/3; background:#111; overflow:hidden; }
+  .slides { display:flex; height:100%; transition:transform .45s var(--ease); }
+  .slide { min-width:100%; height:100%; position:relative; }
+  .slide img, .slide video { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; user-select:none; }
+  .slide img { pointer-events:auto; cursor:zoom-in; -webkit-user-drag:none; }
+  .slide video { pointer-events:auto; }
+  .slide::after { content:''; position:absolute; inset:auto 0 0 0; height:56px; background:linear-gradient(transparent, rgba(17,17,17,.38)); pointer-events:none; }
+  .badge { position:absolute; top:14px; left:14px; z-index:6; background:rgba(17,17,17,.55); color:#fff; font-size:12px; padding:4px 11px; border-radius:999px; backdrop-filter:blur(6px); }
+  .gnav { position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:999px; border:none; background:rgba(17,17,17,.32); color:#fff; display:flex; align-items:center; justify-content:center; z-index:6; transition:background .25s var(--ease); cursor:pointer; }
+  .gnav:hover { background:rgba(17,17,17,.5); }
+  .gnav:disabled { opacity:.22; cursor:default; }
+  .gprev { left:12px; } .gnext { right:12px; }
+  .dots { position:absolute; bottom:16px; left:0; right:0; display:flex; justify-content:center; gap:6px; z-index:6; }
+  .dot { width:6px; height:6px; border-radius:999px; background:rgba(255,255,255,.42); transition:all .35s var(--ease); }
+  .dot.on { width:20px; background:#fff; }
+  .count { position:absolute; bottom:13px; right:16px; z-index:6; background:rgba(17,17,17,.5); color:#fff; font-size:12px; padding:3px 10px; border-radius:999px; backdrop-filter:blur(6px); }
+  .playmask { position:absolute; inset:0; z-index:5; border:none; background:rgba(17,17,17,.14); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .playmask.off { display:none; }
+  .playcircle { width:58px; height:58px; border-radius:999px; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(17,17,17,.25); transition:transform .3s var(--ease); }
+  .playmask:active .playcircle { transform:scale(.92); }
+
+  /* content sheet overlapping gallery */
+  .sheet { position:relative; z-index:7; margin:-26px 14px 0; background:var(--surface); border-radius:18px; box-shadow:var(--shadow); padding:22px 20px 24px; }
+  .pricerow { display:flex; align-items:baseline; gap:8px; }
+  .price { font-size:36px; font-weight:800; letter-spacing:-.6px; color:var(--price); font-feature-settings:"tnum"; line-height:1; }
+  .price-unit { font-size:14px; color:var(--ink-3); }
+  .pill { font-size:12px; padding:3px 11px; border-radius:999px; font-weight:500; }
+  .pill-open { background:var(--brand-soft); color:var(--brand); }
+  .pill-rented { background:var(--price-soft); color:var(--price); }
+  .title { font-size:21px; font-weight:700; letter-spacing:-.2px; line-height:1.35; margin-top:10px; }
+
+  /* info grid — Ziroom-style basic facts */
+  .info-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:16px; background:#fafaf8; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .ig-item { padding:13px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .ig-item + .ig-item { border-left:1px solid var(--line); }
+  .ig-item svg { color:var(--brand); }
+  .ig-label { font-size:11px; color:var(--ink-3); letter-spacing:.04em; }
+  .ig-value { font-size:13px; font-weight:600; color:var(--ink); font-feature-settings:"tnum"; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .addr { display:flex; align-items:center; gap:6px; margin-top:14px; font-size:14px; color:var(--ink-2); }
+  .addr svg { flex-shrink:0; color:var(--brand); }
+  .addr .copy { margin-left:auto; background:none; border:none; color:var(--brand); font-size:13px; font-weight:500; padding:6px 2px 6px 12px; cursor:pointer; }
+
+  /* location card with map link */
+  .loc-card { margin:14px 14px 0; background:var(--surface); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
+  .loc-map { position:relative; display:block; aspect-ratio:21/9; background:linear-gradient(135deg,#e7f1eb,#d4e5dc); text-decoration:none; }
+  .loc-map::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 46%, rgba(20,108,67,.14) 0%, rgba(20,108,67,.05) 34%, transparent 62%); }
+  .loc-pin { position:absolute; left:50%; top:46%; transform:translate(-50%,-100%); z-index:2; display:flex; flex-direction:column; align-items:center; }
+  .loc-pin svg { color:var(--brand); filter:drop-shadow(0 4px 6px rgba(20,108,67,.35)); }
+  .loc-ring { width:30px; height:10px; border-radius:999px; background:rgba(20,108,67,.25); }
+  /* pulse animation adapted from uiverse.io/Amine-maker/tasty-panda-0 */
+  .loc-map::before { content:''; position:absolute; left:50%; top:46%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:999px; background:var(--brand); box-shadow:0 0 0 5px #fff; z-index:1; animation:locPulse 3s infinite; }
+  @keyframes locPulse {
+    0%   { transform:scale(.95); box-shadow:0 0 0 0 rgba(20,108,67,.55), 0 0 8px 5px rgba(20,108,67,.25); }
+    70%  { transform:scale(1);   box-shadow:0 0 0 14px rgba(20,108,67,0),  0 0 8px 5px rgba(20,108,67,.2); }
+    100% { transform:scale(.95); box-shadow:0 0 0 0 rgba(20,108,67,0),  0 0 8px 5px rgba(20,108,67,.2); }
+  }
+  .loc-btns { display:flex; gap:8px; margin-top:12px; }
+  .loc-btn2 { flex:1; height:38px; border:none; border-radius:999px; font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:transform .2s var(--ease); font-family:inherit; }
+  .loc-btn2:active { transform:scale(.96); }
+  .loc-btn2.solid { background:var(--brand); color:#fff; }
+  .loc-btn2.soft { background:var(--brand-soft); color:var(--brand); }
+  .loc-body { padding:13px 16px 14px; }
+  .loc-addr { font-size:15px; font-weight:600; line-height:1.5; }
+  .loc-sub { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
+
+  /* amenities */
+  .am-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; padding:15px 14px 16px; }
+  .am-item { display:flex; flex-direction:column; align-items:center; gap:6px; background:#fafaf8; border:1px solid var(--line); border-radius:11px; padding:11px 4px 9px; }
+  .am-item svg { color:var(--brand); }
+  .am-item span { font-size:11.5px; color:var(--ink-2); }
+  .desc { font-size:15px; line-height:1.85; color:var(--ink-2); margin-top:14px; white-space:pre-wrap; }
+
+  /* WeChat QR overlay */
+  .wxov { position:fixed; inset:0; z-index:420; background:rgba(12,12,12,.72); display:none; align-items:center; justify-content:center; padding:24px; }
+  .wxov.open { display:flex; }
+  .wxcard { background:#fff; border-radius:20px; padding:22px 22px 18px; width:100%; max-width:320px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+  .wxtitle { font-size:17px; font-weight:700; }
+  .wximg { width:230px; height:230px; margin:16px auto 12px; border-radius:14px; object-fit:cover; border:1px solid var(--line); display:block; }
+  .wxid { font-size:13.5px; color:var(--ink-2); display:flex; align-items:center; justify-content:center; gap:8px; font-feature-settings:"tnum"; }
+  .wxid button { border:none; background:var(--brand-soft); color:var(--brand); font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; cursor:pointer; }
+  .wxtip { font-size:12px; color:var(--ink-3); margin-top:10px; line-height:1.6; }
+  .wxclose { margin-top:14px; width:100%; height:42px; border:none; border-radius:999px; background:var(--brand); color:#fff; font-size:14.5px; font-weight:600; cursor:pointer; }
+
+  /* fullscreen photo viewer */
+  .lb { position:fixed; inset:0; z-index:400; background:rgba(12,12,12,.96); display:none; flex-direction:column; }
+  .lb.open { display:flex; }
+  .lb-top { display:flex; align-items:center; justify-content:space-between; padding:14px 16px calc(6px + env(safe-area-inset-top)); }
+  .lb-count { color:rgba(255,255,255,.85); font-size:14px; font-feature-settings:"tnum"; }
+  .lb-close { width:38px; height:38px; border-radius:999px; border:none; background:rgba(255,255,255,.12); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .lb-stage { flex:1; position:relative; overflow:hidden; }
+  .lb-track { display:flex; height:100%; transition:transform .35s var(--ease); }
+  .lb-slide { min-width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:12px; }
+  .lb-slide img { max-width:100%; max-height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; }
+  .lb-nav { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:999px; border:none; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .lb-prev { left:12px; } .lb-next { right:12px; }
+  .lb-nav:disabled { opacity:.25; cursor:default; }
+
+  /* landlord section */
+  .ll-wrap { margin:14px 14px 0; }
+  .ll-head { font-size:13px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; padding:0 6px 10px; }
+  .ll-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--shadow); }
+  .ll-row { display:flex; align-items:center; gap:13px; padding:15px 16px; }
+  .ll-row + .ll-row { border-top:1px solid var(--line); }
+  .avatar { width:44px; height:44px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ll-info { flex:1; min-width:0; }
+  .ll-name { font-size:16px; font-weight:600; display:flex; align-items:center; gap:7px; }
+  .ll-tag { font-size:10px; font-weight:500; color:var(--brand); background:var(--brand-soft); border-radius:5px; padding:2px 6px; flex-shrink:0; }
+  .ll-sub { font-size:13px; color:var(--ink-3); margin-top:2px; }
+  .ll-acts { display:flex; gap:8px; flex-shrink:0; }
+  .ll-act { background:var(--brand-soft); border:none; color:var(--brand); font-size:13px; font-weight:600; padding:8px 14px; border-radius:999px; cursor:pointer; text-decoration:none; display:flex; align-items:center; gap:5px; transition:transform .2s var(--ease), background .2s; }
+  .ll-act:active { transform:scale(.95); background:#d9e9e0; }
+  .ll-act.solid { background:var(--brand); color:#fff; }
+
+  /* floating dock */
+  .dock-wrap { position:fixed; left:0; right:0; bottom:0; z-index:100; display:flex; justify-content:center; pointer-events:none; }
+  .dock { pointer-events:auto; width:100%; max-width:612px; display:flex; gap:10px; padding:10px 14px calc(12px + env(safe-area-inset-bottom)); }
+  .dock-back { width:48px; height:48px; border-radius:999px; background:var(--surface); border:none; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; text-decoration:none; }
+  .dock-btn { flex:1; height:48px; border-radius:999px; border:none; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; text-decoration:none; transition:transform .2s var(--ease); }
+  .dock-btn:active { transform:scale(.97); }
+  .dock-call { background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(20,108,67,.32); }
+  .dock-wx { background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+
+  /* tenant services (booking / repair / message) */
+  .svc-wrap { margin:14px 14px 0; }
+  .svc-head { font-size:13px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; padding:0 6px 10px; }
+  .svc-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
+  .svc-tabs { display:flex; border-bottom:1px solid var(--line); }
+  .stab { flex:1; height:44px; border:none; background:none; font-size:14px; font-weight:500; color:var(--ink-3); cursor:pointer; position:relative; font-family:inherit; }
+  .stab.on { color:var(--brand); font-weight:600; }
+  .stab.on::after { content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:0; width:26px; height:3px; border-radius:3px 3px 0 0; background:var(--brand); }
+  .svc-pane { display:none; padding:16px 16px 18px; }
+  .svc-pane.on { display:block; }
+  .sfield { margin-bottom:11px; }
+  .sfield input, .sfield textarea { width:100%; padding:11px 13px; border:1px solid rgba(31,30,26,.14); border-radius:11px; font-size:14.5px; font-family:inherit; background:#faf9f6; color:var(--ink); transition:border-color .2s, background .2s; }
+  .sfield input:focus, .sfield textarea:focus { border-color:var(--brand); outline:none; background:#fff; }
+  .sfield textarea { resize:none; min-height:74px; }
+  .ssubmit { width:100%; height:44px; border-radius:999px; border:none; background:var(--brand); color:#fff; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; transition:transform .2s var(--ease); }
+  .ssubmit:active { transform:scale(.98); }
+  .snote { margin-top:10px; font-size:12px; color:var(--ink-3); text-align:center; line-height:1.6; }
+
+  /* toast + empty */
+  .toast { position:fixed; z-index:500; width:100%; top:42%; display:none; justify-content:center; pointer-events:none; }
+  .toast.show { display:flex; }
+  .toast span { background:rgba(17,17,17,.78); color:#fff; font-size:14px; padding:10px 22px; border-radius:999px; backdrop-filter:blur(4px); }
+  .empty { padding:130px 24px 0; text-align:center; }
+  .empty svg { color:rgba(31,30,26,.14); }
+  .empty h2 { font-size:17px; font-weight:600; margin-top:14px; color:var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slides { transition:none; }
+    * { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+{% if media %}
+<div class="gallery" id="gallery">
+  <div class="slides" id="slides">
+    {% for m in media %}
+    <div class="slide">
+      {% if m.type == 'video' %}
+      <video src="/media/{{ prop.id }}/{{ m.filename }}?v={{ m.v }}" preload="metadata" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5" data-slide="{{ loop.index0 }}"></video>
+      <button class="playmask" data-slide="{{ loop.index0 }}" aria-label="播放视频">
+        <span class="playcircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#1f1e1a" style="margin-left:3px"><path d="M8 5.14v13.72c0 .8.87 1.3 1.56.88l10.54-6.86a1.05 1.05 0 0 0 0-1.76L9.56 4.26A1.04 1.04 0 0 0 8 5.14z"/></svg>
+        </span>
+      </button>
+      <span class="badge">视频</span>
+      {% else %}
+      <img src="/media/{{ prop.id }}/{{ m.filename }}?v={{ m.v }}" alt="{{ prop.name }}" loading="{{ 'eager' if loop.first else 'lazy' }}">
+      {% if loop.first %}<span class="badge">实拍</span>{% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if media|length > 1 %}
+  <button class="gnav gprev" id="prevBtn" aria-label="上一张"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="gnav gnext" id="nextBtn" aria-label="下一张"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  <div class="dots" id="dots">{% for m in media %}<span class="dot{{ ' on' if loop.first }}"></span>{% endfor %}</div>
+  <div class="count" id="counter">1/{{ media|length }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="sheet">
+  <div class="pricerow">
+    {% if prop.price %}<span class="price">{{ prop.price }}</span><span class="price-unit">元/月</span>{% endif %}
+    {% if prop.status == 'rented' %}<span class="pill pill-rented">已出租</span>
+    {% else %}<span class="pill pill-open">可租</span>{% endif %}
+  </div>
+  <h1 class="title">{{ prop.name }}</h1>
+  {% set info_items = [
+    ('户型', prop.layout, '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14v7M14 17.5h7"/></svg>'),
+    ('面积', (prop.area ~ '㎡') if prop.area else '', '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M8 3v5H3M16 21v-5h5"/></svg>'),
+    ('楼层', prop.floor, '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>'),
+    ('朝向', prop.orientation, '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>')
+  ] | rejectattr('1', 'equalto', '') | list %}
+  {% if info_items %}
+  <div class="info-grid">
+    {% for label, val, icon in info_items %}
+    <div class="ig-item">
+      {{ icon | safe }}
+      <span class="ig-label">{{ label }}</span>
+      <span class="ig-value">{{ val }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if prop.descr %}<p class="desc">{{ prop.descr }}</p>{% endif %}
+</div>
+
+  {% if prop.address %}
+  <div class="loc-card">
+    <div class="loc-map" aria-hidden="true">
+      <div class="loc-pin">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--brand)" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/></svg>
+        <div class="loc-ring"></div>
+      </div>
+    </div>
+    <div class="loc-body">
+      <div class="loc-addr">{{ prop.address }}</div>
+      <div class="loc-btns">
+        <button class="loc-btn2 solid" data-copy="{{ prop.address }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          复制地址
+        </button>
+        <button class="loc-btn2 soft" data-copy="https://uri.amap.com/search?keyword={{ prop.address|urlencode }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          复制地图链接
+        </button>
+      </div>
+      <div class="loc-sub">复制后粘贴到高德地图或微信，即可查看位置与导航</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if prop.amenity_items %}
+  <div class="loc-card">
+    <div class="am-grid">
+      {% for a in prop.amenity_items %}
+      <div class="am-item">{{ a.icon | safe }}<span>{{ a.name }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if prop.owner_name or prop.owner_phone or prop.owner_wechat %}
+<div class="ll-wrap">
+  <div class="ll-head">联系房东</div>
+  <div class="ll-card">
+    <div class="ll-row">
+      <div class="avatar">{{ (prop.owner_name or '房')[:1] }}</div>
+      <div class="ll-info">
+        <div class="ll-name">{{ prop.owner_name or '房东' }}<span class="ll-tag">房东直租</span></div>
+        {% if prop.owner_wechat %}<div class="ll-sub">微信：{{ prop.owner_wechat }}</div>
+        {% elif prop.owner_phone %}<div class="ll-sub">电话：{{ prop.owner_phone }}</div>{% endif %}
+      </div>
+      <div class="ll-acts">
+        {% if prop.owner_phone %}<a class="ll-act solid" href="tel:{{ prop.owner_phone }}">电话</a>{% endif %}
+        {% if prop.owner_wechat %}
+      <button class="ll-act" onclick="wxTap()">微信</button>
+      {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not media %}
+<div class="empty">
+  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+  <h2>房源资料整理中</h2>
+</div>
+{% endif %}
+
+<div class="lb" id="lb" aria-hidden="true">
+  <div class="lb-top">
+    <span class="lb-count" id="lbCount"></span>
+    <button class="lb-close" id="lbClose" aria-label="关闭">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="lb-stage">
+    <div class="lb-track" id="lbTrack">
+      {% for m in media if m.type == 'photo' %}
+      <div class="lb-slide"><img src="/media/{{ prop.id }}/{{ m.filename }}?v={{ m.v }}" alt="{{ prop.name }}" loading="lazy"></div>
+      {% endfor %}
+    </div>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="上一张"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="lb-nav lb-next" id="lbNext" aria-label="下一张"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+</div>
+
+{% if flags.booking or flags.repair or flags.message %}
+<div class="svc-wrap">
+  <div class="svc-head">租房服务</div>
+  <div class="svc-card">
+    <div class="svc-tabs">
+      {% if flags.booking %}<button type="button" class="stab on" data-pane="booking">预约看房</button>{% endif %}
+      {% if flags.repair %}<button type="button" class="stab{{ ' on' if not flags.booking }}" data-pane="repair">维修申报</button>{% endif %}
+      {% if flags.message %}<button type="button" class="stab{{ ' on' if not flags.booking and not flags.repair }}" data-pane="message">留言咨询</button>{% endif %}
+    </div>
+
+    {% if flags.booking %}
+    <form class="svc-pane on" data-pane="booking" method="post" action="/h/{{ prop.id }}/book">
+      <div class="sfield"><input name="name" placeholder="您的称呼" maxlength="20"></div>
+      <div class="sfield"><input name="phone" type="tel" placeholder="联系电话 *" required maxlength="20"></div>
+      <div class="sfield"><input name="wish_time" placeholder="期望看房时间，如：本周末下午" maxlength="30"></div>
+      <button type="submit" class="ssubmit">提交预约</button>
+      <div class="snote">提交后房东会尽快与你电话确认，看房不收取任何费用</div>
+    </form>
+    {% endif %}
+
+    {% if flags.repair %}
+    <form class="svc-pane{{ ' on' if not flags.booking }}" data-pane="repair" method="post" action="/h/{{ prop.id }}/repair">
+      <div class="sfield"><input name="contact" placeholder="联系方式（房间号或电话）" maxlength="30"></div>
+      <div class="sfield"><textarea name="content" placeholder="请描述需要维修的问题，如：厨房水龙头漏水 *" required maxlength="300"></textarea></div>
+      <button type="submit" class="ssubmit">提交报修</button>
+      <div class="snote">房东会尽快安排处理</div>
+    </form>
+    {% endif %}
+
+    {% if flags.message %}
+    <form class="svc-pane{{ ' on' if not flags.booking and not flags.repair }}" data-pane="message" method="post" action="/h/{{ prop.id }}/message">
+      <div class="sfield"><input name="contact" placeholder="联系方式（选填）" maxlength="30"></div>
+      <div class="sfield"><textarea name="content" placeholder="想咨询的问题，如：是否可短租、能否养宠物 *" required maxlength="300"></textarea></div>
+      <button type="submit" class="ssubmit">发送留言</button>
+      <div class="snote">留言仅房东可见</div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if prop.owner_wechat_qr %}
+<div class="wxov" id="wxov">
+  <div class="wxcard">
+    <div class="wxtitle">微信扫码，直接联系房东</div>
+    <img class="wximg" src="/wxqr/{{ prop.landlord_id }}" alt="房东微信二维码">
+    {% if prop.owner_wechat %}
+    <div class="wxid">微信号：{{ prop.owner_wechat }} <button type="button" data-copy="{{ prop.owner_wechat }}">复制</button></div>
+    {% endif %}
+    <div class="wxtip">打开微信「扫一扫」，扫描上方二维码添加房东</div>
+    <button class="wxclose" onclick="closeWx()">关闭</button>
+  </div>
+</div>
+{% endif %}
+
+<div class="toast" id="toast"><span id="toastMsg">已复制</span></div>
+
+<div class="dock-wrap">
+  <div class="dock">
+    <a class="dock-back" href="{{ url_for('index') }}" aria-label="查看全部房源">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </a>
+    {% if prop.owner_phone %}
+    <a class="dock-btn dock-call" href="tel:{{ prop.owner_phone }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      电话咨询
+    </a>
+    {% endif %}
+    {% if prop.owner_wechat %}
+    <button class="dock-btn dock-wx" onclick="wxTap()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8.691 2.188C3.883 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348z"/></svg>
+      微信扫码
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function() {
+  var slides = document.getElementById('slides');
+  var dots = document.querySelectorAll('.dot');
+  var counter = document.getElementById('counter');
+  var total = dots.length;
+  var current = 0, startX = 0, dragging = false, autoTimer = null;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function pauseVideos() {
+    document.querySelectorAll('#slides video').forEach(function(v) {
+      if (!v.paused) v.pause();
+      v.currentTime = 0;
+      var mask = document.querySelector('.playmask[data-slide="' + v.dataset.slide + '"]');
+      if (mask) mask.classList.remove('off');
+    });
+  }
+
+  function goTo(i) {
+    if (i < 0 || i >= total) return;
+    pauseVideos();
+    current = i;
+    slides.style.transform = 'translateX(-' + current * 100 + '%)';
+    dots.forEach(function(d, idx) { d.classList.toggle('on', idx === current); });
+    if (counter) counter.textContent = (current + 1) + '/' + total;
+    var prev = document.getElementById('prevBtn');
+    var next = document.getElementById('nextBtn');
+    if (prev) prev.disabled = current === 0;
+    if (next) next.disabled = current === total - 1;
+  }
+
+  document.querySelectorAll('.playmask').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var video = document.querySelector('#slides video[data-slide="' + btn.dataset.slide + '"]');
+      if (!video) return;
+      goTo(parseInt(btn.dataset.slide));
+      clearInterval(autoTimer); autoTimer = null;
+      btn.classList.add('off');
+      video.play();
+    });
+  });
+
+  document.querySelectorAll('#slides video').forEach(function(v) {
+    v.addEventListener('ended', function() {
+      var mask = document.querySelector('.playmask[data-slide="' + v.dataset.slide + '"]');
+      if (mask) mask.classList.remove('off');
+      resetAuto();
+    });
+  });
+
+  if (total > 1) {
+    goTo(0);
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    if (prevBtn) prevBtn.addEventListener('click', function() { goTo(current - 1); resetAuto(); });
+    if (nextBtn) nextBtn.addEventListener('click', function() { goTo(current + 1); resetAuto(); });
+    var gallery = document.getElementById('gallery');
+    gallery.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; dragging = true; clearInterval(autoTimer); autoTimer = null; }, {passive:true});
+    gallery.addEventListener('touchend', function(e) {
+      if (!dragging) return;
+      var diff = e.changedTouches[0].clientX - startX;
+      if (diff < -40) goTo(current + 1);
+      else if (diff > 40) goTo(current - 1);
+      dragging = false; resetAuto();
+    }, {passive:true});
+    function resetAuto() {
+      if (reduceMotion) return;
+      if (!autoTimer) autoTimer = setInterval(function() { goTo((current + 1) % total); }, 5000);
+    }
+    resetAuto();
+
+    /* fullscreen photo viewer */
+    var lb = document.getElementById('lb');
+    if (lb) {
+      var lbTrack = document.getElementById('lbTrack');
+      var lbCount = document.getElementById('lbCount');
+      var lbTotal = lbTrack.children.length;
+      var lbIndex = 0, lbStartX = 0, lbDragging = false;
+
+      function lbGoTo(i) {
+        if (i < 0 || i >= lbTotal) return;
+        lbIndex = i;
+        lbTrack.style.transform = 'translateX(-' + i * 100 + '%)';
+        lbCount.textContent = (i + 1) + '/' + lbTotal;
+        var p = document.getElementById('lbPrev'), n = document.getElementById('lbNext');
+        if (p) p.disabled = i === 0;
+        if (n) n.disabled = i === lbTotal - 1;
+      }
+      function lbOpen(i) {
+        clearInterval(autoTimer); autoTimer = null;
+        lb.classList.add('open');
+        lb.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        lbGoTo(i);
+      }
+      function lbClose() {
+        lb.classList.remove('open');
+        lb.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        resetAuto();
+      }
+      document.querySelectorAll('#slides .slide img').forEach(function(img, idx) {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', function() { lbOpen(idx); });
+      });
+      document.getElementById('lbClose').addEventListener('click', lbClose);
+      var lbPrev = document.getElementById('lbPrev'), lbNext = document.getElementById('lbNext');
+      if (lbPrev) lbPrev.addEventListener('click', function() { lbGoTo(lbIndex - 1); });
+      if (lbNext) lbNext.addEventListener('click', function() { lbGoTo(lbIndex + 1); });
+      lb.addEventListener('touchstart', function(e) { lbStartX = e.touches[0].clientX; lbDragging = true; }, {passive:true});
+      lb.addEventListener('touchend', function(e) {
+        if (!lbDragging) return;
+        var diff = e.changedTouches[0].clientX - lbStartX;
+        if (diff < -40) lbGoTo(lbIndex + 1);
+        else if (diff > 40) lbGoTo(lbIndex - 1);
+        lbDragging = false;
+      }, {passive:true});
+      document.addEventListener('keydown', function(e) {
+        if (!lb.classList.contains('open')) return;
+        if (e.key === 'Escape') lbClose();
+        else if (e.key === 'ArrowLeft') lbGoTo(lbIndex - 1);
+        else if (e.key === 'ArrowRight') lbGoTo(lbIndex + 1);
+      });
+    }
+  }
+})();
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg || '已复制';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+/* service tabs */
+document.querySelectorAll('.stab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.stab').forEach(function(t) { t.classList.remove('on'); });
+    document.querySelectorAll('.svc-pane').forEach(function(p) { p.classList.remove('on'); });
+    tab.classList.add('on');
+    var pane = document.querySelector('.svc-pane[data-pane="' + tab.dataset.pane + '"]');
+    if (pane) pane.classList.add('on');
+  });
+});
+{% if sent %}showToast('已提交，房东会尽快联系你');{% endif %}
+function doCopy(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showToast).catch(function() { fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  var input = document.createElement('textarea');
+  input.value = text;
+  input.style.position = 'fixed'; input.style.opacity = '0';
+  document.body.appendChild(input);
+  input.select();
+  try { document.execCommand('copy'); showToast(); } catch(e) {}
+  document.body.removeChild(input);
+}
+document.querySelectorAll('[data-copy]').forEach(function(btn) {
+  btn.addEventListener('click', function() { doCopy(btn.dataset.copy); });
+});
+{% if prop.owner_wechat %}
+function copyWechat() {
+  doCopy('{{ prop.owner_wechat }}');
+}
+{% endif %}
+function wxTap() {
+  {% if prop.owner_wechat_qr %}
+  document.getElementById('wxov').classList.add('open');
+  {% elif prop.owner_wechat %}
+  doCopy('{{ prop.owner_wechat }}');
+  {% endif %}
+}
+function closeWx() {
+  var w = document.getElementById('wxov');
+  if (w) w.classList.remove('open');
+}
+{% if prop.owner_wechat_qr %}
+document.getElementById('wxov').addEventListener('click', function(e) {
+  if (e.target === this) closeWx();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeWx();
+});
+{% endif %}
+</script>
+</body>
+</html>

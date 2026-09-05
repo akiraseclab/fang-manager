@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>编辑 - {{ prop.name }}</title>
+<style>
+  :root {
+    --bg:#f4f3ef; --surface:#ffffff;
+    --ink:#1f1e1a; --ink-2:rgba(31,30,26,.64); --ink-3:rgba(31,30,26,.44);
+    --brand:#146c43; --brand-deep:#0f5a37; --brand-soft:#e7f1eb;
+    --price:#d9382e; --price-soft:#fdeceb;
+    --line:rgba(31,30,26,.08);
+    --shadow:0 1px 2px rgba(31,30,26,.05), 0 10px 30px rgba(31,30,26,.07);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:40px; -webkit-font-smoothing:antialiased; }
+  button { font-family:inherit; }
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid var(--brand); outline-offset:2px; border-radius:8px; }
+  .page { max-width:720px; margin:0 auto; padding:0 14px; }
+
+  .hd { display:flex; align-items:center; gap:12px; margin:0 -14px 4px; padding:24px 18px 20px; background:linear-gradient(165deg,#17754a 0%,#10593a 58%,#0c4a30 100%); border-radius:0 0 22px 22px; position:sticky; top:0; z-index:50; box-shadow:0 6px 18px rgba(8,40,25,.16); }
+  .back { width:38px; height:38px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none; flex-shrink:0; transition:transform .2s var(--ease); backdrop-filter:blur(4px); }
+  .back:active { transform:scale(.92); }
+  .hd h1 { font-size:18px; font-weight:700; letter-spacing:-.2px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#fff; }
+  .status-btn { border:none; font-size:12px; font-weight:700; padding:7px 14px; border-radius:999px; cursor:pointer; flex-shrink:0; transition:transform .2s var(--ease); font-family:inherit; background:#fff; box-shadow:0 4px 12px rgba(8,40,25,.22); }
+  .status-btn:active { transform:scale(.94); }
+  .st-open { color:var(--brand); }
+  .st-rented { color:var(--price); }
+
+  .sec { font-size:13px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; padding:22px 6px 10px; }
+  .card { background:var(--surface); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
+
+  .field { padding:13px 18px; display:flex; align-items:flex-start; gap:14px; }
+  .field + .field { border-top:1px solid var(--line); }
+  .field label { width:72px; flex-shrink:0; font-size:15px; color:var(--ink); padding-top:9px; }
+  .field .in { flex:1; min-width:0; }
+  .field input, .field textarea { width:100%; border:none; background:none; font-size:15px; font-family:inherit; color:var(--ink); padding:9px 0; }
+  .field input:focus, .field textarea:focus { outline:none; }
+  .field textarea { resize:vertical; min-height:70px; line-height:1.6; }
+  .field input::placeholder, .field textarea::placeholder { color:var(--ink-3); }
+  .spec-grid { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+  .spec-grid .field { border-top:none; }
+  .spec-grid .field:nth-child(odd) { border-right:1px solid var(--line); }
+  .spec-grid .field label { width:auto; font-size:13px; color:var(--ink-3); }
+
+  .btn-full { display:block; width:100%; height:46px; border-radius:999px; border:none; font-size:15px; font-weight:600; cursor:pointer; margin-top:14px; transition:transform .2s var(--ease); font-family:inherit; }
+  .btn-full:active { transform:scale(.98); }
+  .btn-brand { background:var(--brand); color:#fff; box-shadow:0 4px 14px rgba(20,108,67,.28); }
+  .btn-soft { background:var(--brand-soft); color:var(--brand); }
+
+  .ld-row { display:flex; align-items:center; gap:13px; padding:14px 16px; }
+  .ld-row + .ld-row { border-top:1px solid var(--line); }
+  .avatar { width:42px; height:42px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ld-info { flex:1; min-width:0; }
+  .ld-name { font-size:15px; font-weight:600; }
+  .ld-sub { font-size:12px; color:var(--ink-3); margin-top:2px; }
+  .ld-edit { background:var(--brand-soft); color:var(--brand); font-size:13px; font-weight:600; padding:8px 14px; border-radius:999px; text-decoration:none; }
+  .ld-del { background:none; border:none; color:var(--price); font-size:13px; font-weight:500; padding:8px; cursor:pointer; }
+  .addhint { padding:13px 18px; font-size:13px; color:var(--ink-3); border-top:1px solid var(--line); }
+
+  .upload { margin-top:14px; border:1.5px dashed rgba(31,30,26,.18); border-radius:14px; background:rgba(255,255,255,.6); padding:22px; text-align:center; color:var(--ink-3); font-size:14px; cursor:pointer; transition:border-color .2s; }
+  .upload:hover { border-color:var(--brand); }
+  .upload input { display:none; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(78px, 1fr)); gap:9px; padding:14px 16px 4px; }
+  .mitem { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#efece6; }
+  .mitem img { width:100%; height:100%; object-fit:cover; display:block; }
+  .cover-tag { position:absolute; left:5px; bottom:5px; font-size:9.5px; font-weight:500; padding:2px 7px; border-radius:999px; background:rgba(20,108,67,.88); color:#fff; backdrop-filter:blur(4px); }
+  .mitem .vbox { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; font-size:10px; color:var(--ink-3); padding:4px; overflow:hidden; }
+  .mdel { position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:999px; border:none; background:rgba(17,17,17,.55); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  /* amenity picker — adapted from uiverse.io/Darlley/tall-ape-86 (checkbox tile) */
+  .am-picker { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; padding:14px 14px 4px; }
+  .am-picker .cbx-input { position:absolute; opacity:0; width:0; height:0; }
+  .am-picker .cbx-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:70px; border-radius:12px; border:1.5px solid var(--line); background:#fafaf8; transition:.15s ease; cursor:pointer; position:relative; }
+  .am-picker .cbx-tile:hover { border-color:var(--brand); }
+  .am-picker .cbx-input:checked + .cbx-tile { border-color:var(--brand); background:var(--brand-soft); box-shadow:0 5px 10px rgba(20,108,67,.12); }
+  .am-picker .cbx-input:checked + .cbx-tile::before { content:"✓"; position:absolute; top:4px; right:4px; width:16px; height:16px; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff; border-radius:999px; }
+  .am-picker .cbx-icon { color:var(--ink-3); transition:.375s ease; display:flex; }
+  .am-picker .cbx-label { font-size:11.5px; color:var(--ink-2); transition:.375s ease; text-align:center; }
+  .am-picker .cbx-input:checked + .cbx-tile .cbx-icon,
+  .am-picker .cbx-input:checked + .cbx-tile .cbx-label { color:var(--brand); }
+  .am-picker .cbx-input:checked + .cbx-tile .cbx-label { font-weight:600; }
+  .am-picker .cbx-input:focus + .cbx-tile { box-shadow:0 0 0 3px rgba(20,108,67,.18); }
+
+  .linkrow { display:flex; align-items:center; padding:15px 18px; font-size:15px; color:var(--ink); text-decoration:none; }
+  .linkrow + .linkrow { border-top:1px solid var(--line); }
+  .linkrow svg { margin-left:auto; color:var(--ink-3); }
+
+  .toast { position:fixed; z-index:500; width:100%; top:42%; display:none; justify-content:center; pointer-events:none; }
+  .toast.show { display:flex; }
+  .toast .tbox { background:rgba(17,17,17,.78); color:#fff; border-radius:14px; padding:14px 22px; font-size:14px; display:flex; align-items:center; gap:10px; backdrop-filter:blur(4px); }
+  .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:999px; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+{% with msgs = get_flashed_messages() %}{% for m in msgs %}
+<div class="addhint" style="border:none; padding:16px 6px 0; color:#d9382e; font-weight:500;">{{ m }}</div>
+{% endfor %}{% endwith %}
+
+  <div class="hd">
+  <a class="back" href="{{ url_for('dashboard') }}" aria-label="返回工作台">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </a>
+    <h1>{{ prop.name }}</h1>
+    <form method="post" action="{{ url_for('toggle_status', pid=prop.id) }}" style="display:inline;">
+      <button type="submit" title="点击切换可租/已出租" class="status-btn {{ 'st-rented' if prop.status == 'rented' else 'st-open' }}">
+        {{ '已出租' if prop.status == 'rented' else '可租' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="sec">基本信息</div>
+  <div class="card">
+    <form id="basicForm" method="post" action="{{ url_for('update_prop', pid=prop.id) }}">
+      <div class="field"><label>名称</label><div class="in"><input name="name" value="{{ prop.name }}" required></div></div>
+      <div class="field"><label>月租</label><div class="in"><input name="price" value="{{ prop.price }}" placeholder="如 1500"></div></div>
+      <div class="spec-grid">
+        <div class="field"><label>户型</label><div class="in"><input name="layout" value="{{ prop.layout }}" placeholder="3室2厅"></div></div>
+        <div class="field"><label>面积</label><div class="in"><input name="area" value="{{ prop.area }}" placeholder="89"></div></div>
+        <div class="field"><label>楼层</label><div class="in"><input name="floor" value="{{ prop.floor }}" placeholder="中楼层"></div></div>
+        <div class="field"><label>朝向</label><div class="in"><input name="orientation" value="{{ prop.orientation }}" placeholder="朝南"></div></div>
+      </div>
+      <div class="field"><label>地址</label><div class="in"><input name="address" value="{{ prop.address }}" placeholder="租客可见，支持复制"></div></div>
+      <div class="field"><label>描述</label><div class="in"><textarea name="descr" rows="3" placeholder="户型、面积、位置等">{{ prop.descr }}</textarea></div></div>
+    </form>
+  </div>
+  <button type="submit" form="basicForm" class="btn-full btn-brand">保存基本信息</button>
+
+  <div class="sec">联系房东</div>
+  <div class="card">
+    <div class="ld-row">
+      <div class="avatar">{{ (me['name'] or '房')[:1] }}</div>
+      <div class="ld-info">
+        <div class="ld-name">{{ me['name'] or '房东' }}</div>
+        <div class="ld-sub">
+          {% if me['phone'] %}电话 {{ me['phone'] }}{% endif %}
+          {% if me['phone'] and me['wechat_id'] %} · {% endif %}
+          {% if me['wechat_id'] %}微信 {{ me['wechat_id'] }}{% endif %}
+        </div>
+      </div>
+      <a href="{{ url_for('profile') }}" class="ld-edit">修改资料</a>
+    </div>
+  </div>
+
+  <div class="sec">当前租户 · 仅后台可见</div>
+  <div class="card">
+    <form id="tenantForm" method="post" action="{{ url_for('save_tenant', pid=prop.id) }}">
+      <div class="field"><label>姓名</label><div class="in"><input name="name" value="{{ tenant.name if tenant else '' }}" placeholder="留空则清空并标记可租"></div></div>
+      <div class="field"><label>电话</label><div class="in"><input name="phone" type="tel" value="{{ tenant.phone if tenant else '' }}"></div></div>
+      <div class="field"><label>微信号</label><div class="in"><input name="wechat_id" value="{{ tenant.wechat_id if tenant else '' }}"></div></div>
+      <div class="field"><label>租期起</label><div class="in"><input name="lease_start" type="date" value="{{ tenant.lease_start if tenant else '' }}"></div></div>
+      <div class="field"><label>租期止</label><div class="in"><input name="lease_end" type="date" value="{{ tenant.lease_end if tenant else '' }}"></div></div>
+    </form>
+    <div style="padding:4px 16px 16px;">
+      <button type="submit" form="tenantForm" class="btn-full btn-soft">保存租户信息</button>
+    </div>
+  </div>
+
+  <div class="sec">房源照片</div>
+  <div class="card" style="padding-bottom:14px;">
+    {% if photos %}
+    <div class="grid">
+      {% for p in photos %}
+      <div class="mitem">
+        <img src="/media/{{ prop.id }}/{{ p.filename }}?v={{ p.v }}" alt="">
+        {% if loop.first %}<span class="cover-tag">封面</span>{% endif %}
+        <form method="post" action="{{ url_for('delete_media', mid=p.id) }}" onsubmit="return confirm('删除这张照片？')">
+          <button type="submit" class="mdel" aria-label="删除">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <form id="photoForm" method="post" action="{{ url_for('upload_photos', pid=prop.id) }}" enctype="multipart/form-data">
+      <div class="upload" style="margin:14px 16px 0;" onclick="this.querySelector('input').click()">
+        点击添加照片（可多选）
+        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple
+               onchange="precheck(this, /^(image\/(jpeg|png|webp))$/i, '仅支持 JPG / PNG / WebP 图片') && document.getElementById('photoForm').submit();">
+      </div>
+    </form>
+  </div>
+
+  <div class="sec">房源视频 · 自动加入轮播</div>
+  <div class="card" style="padding-bottom:14px;">
+    {% if videos %}
+    <div class="grid">
+      {% for v in videos %}
+      <div class="mitem">
+        <div class="vbox">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          {{ v.filename }}
+        </div>
+        <form method="post" action="{{ url_for('delete_media', mid=v.id) }}" onsubmit="return confirm('删除这个视频？')">
+          <button type="submit" class="mdel" aria-label="删除">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <form id="videoForm" method="post" action="{{ url_for('upload_video', pid=prop.id) }}" enctype="multipart/form-data">
+      <div class="upload" style="margin:14px 16px 0;" onclick="this.querySelector('input').click()">
+        点击上传视频（mp4 / mov / webm）
+        <input type="file" name="video" accept="video/mp4,video/quicktime,video/webm"
+               onchange="precheck(this, /^(video\/(mp4|quicktime|webm))$/i, '仅支持 mp4 / mov / webm 视频') && document.getElementById('videoForm').submit();">
+      </div>
+    </form>
+  </div>
+
+  <div class="sec">配套设施 · 展示在租客页</div>
+  <div class="card" style="padding-bottom:12px;">
+    <div class="am-picker">
+      {% for a in amenity_items %}
+      <label class="cbx">
+        <input class="cbx-input" type="checkbox" name="amenities" value="{{ a.key }}" form="basicForm" {{ 'checked' if a.on }}>
+        <span class="cbx-tile">
+          <span class="cbx-icon">{{ a.icon | safe }}</span>
+          <span class="cbx-label">{{ a.name }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="addhint" style="border-top:none;">点选房源提供的配套，点上方"保存基本信息"后生效</div>
+  </div>
+
+  {% if flags.booking %}
+  <div class="sec">预约看房{% if bookings %} · {{ bookings|length }} 条{% endif %}</div>
+  <div class="card">
+    {% for b in bookings %}
+    <div class="ld-row">
+      <div class="avatar">{{ (b.name or '客')[:1] }}</div>
+      <div class="ld-info">
+        <div class="ld-name">{{ b.name or '未署名' }}{% if b.wish_time %}<span style="font-weight:400; font-size:12.5px; color:var(--ink-3); margin-left:6px;">{{ b.wish_time }}</span>{% endif %}</div>
+        <div class="ld-sub">{{ b.phone }} · {{ b.created_at }}</div>
+      </div>
+      {% if b.phone %}<a class="ld-edit" href="tel:{{ b.phone }}">打电话</a>{% endif %}
+      <form method="post" action="{{ url_for('booking_delete', bid=b.id) }}" onsubmit="return confirm('删除这条预约？')">
+        <button class="ld-del">删除</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="addhint">暂无预约。开启本功能后，租客可在房源页提交看房预约。</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if flags.repair %}
+  <div class="sec">维修申报{% if repairs %} · {{ repairs|selectattr('status', 'equalto', 'open')|list|length }} 条待处理{% endif %}</div>
+  <div class="card">
+    {% for r in repairs %}
+    <div class="ld-row">
+      <div class="avatar" {% if r.status == 'done' %}style="background:#efece6; color:var(--ink-3);"{% endif %}>{{ '✓' if r.status == 'done' else '修' }}</div>
+      <div class="ld-info">
+        <div class="ld-name" {% if r.status == 'done' %}style="color:var(--ink-3); text-decoration:line-through;"{% endif %}>{{ r.content }}</div>
+        <div class="ld-sub">{{ r.contact or '未留联系方式' }} · {{ r.created_at }}</div>
+      </div>
+      {% if r.status != 'done' %}
+      <form method="post" action="{{ url_for('repair_done', rid=r.id) }}">
+        <button class="ld-edit">完成</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('repair_delete', rid=r.id) }}" onsubmit="return confirm('删除这条报修？')">
+        <button class="ld-del">删除</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="addhint">暂无报修。开启本功能后，在租租客可在房源页一键报修。</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if flags.message %}
+  <div class="sec">租客留言{% if messages %} · {{ messages|length }} 条{% endif %}</div>
+  <div class="card">
+    {% for m in messages %}
+    <div class="ld-row">
+      <div class="avatar">{{ '言' }}</div>
+      <div class="ld-info">
+        <div class="ld-name" style="font-weight:500; font-size:14px; white-space:normal;">{{ m.content }}</div>
+        <div class="ld-sub">{{ m.contact or '未留联系方式' }} · {{ m.created_at }}</div>
+      </div>
+      <form method="post" action="{{ url_for('message_delete', mid=m.id) }}" onsubmit="return confirm('删除这条留言？')">
+        <button class="ld-del">删除</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="addhint">暂无留言。开启本功能后，租客可在房源页匿名咨询。</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="sec">推广</div>
+  <div class="card">
+    <a class="linkrow" href="{{ url_for('qr', pid=prop.id) }}" target="_blank">查看房源二维码
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+    <a class="linkrow" href="{{ url_for('landing', pid=prop.id) }}" target="_blank">预览租客页面
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+  </div>
+
+</div>
+
+<div class="toast" id="loadToast"><div class="tbox"><span class="spinner"></span><span id="loadMsg">处理中…</span></div></div>
+<script>
+function precheck(input, pattern, msg) {
+  for (var i = 0; i < input.files.length; i++) {
+    var f = input.files[i];
+    var ok = pattern.test(f.type);
+    if (!ok && f.name) {
+      var ext = f.name.split('.').pop().toLowerCase();
+      ok = /jpe?g|png|webp/.test(ext) && pattern.source.indexOf('image') > -1;
+      ok = ok || /mp4|mov|webm/.test(ext) && pattern.source.indexOf('video') > -1;
+    }
+    if (!ok) { alert('已取消上传：' + msg + '\n文件：' + f.name); input.value = ''; return false; }
+  }
+  return input.files.length > 0;
+}
+document.querySelectorAll('form').forEach(function(f) {
+  f.addEventListener('submit', function() {
+    var btn = f.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    var msg = '处理中…';
+    if (f.id === 'photoForm') msg = '上传照片中…';
+    else if (f.id === 'videoForm') msg = '上传视频中…';
+    else if (f.action.indexOf('landlord') > -1) msg = '添加房东中…';
+    else if (f.action.indexOf('tenant') > -1) msg = '保存租户中…';
+    document.getElementById('loadMsg').textContent = msg;
+    document.getElementById('loadToast').classList.add('show');
+  });
+});
+</script>
+</body>
+</html>

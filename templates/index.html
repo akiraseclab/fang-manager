@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>温溪房源</title>
+<style>
+  :root {
+    --bg:#f4f3ef; --surface:#ffffff;
+    --ink:#1f1e1a; --ink-2:rgba(31,30,26,.64); --ink-3:rgba(31,30,26,.44);
+    --brand:#146c43; --brand-soft:#e7f1eb;
+    --price:#d9382e;
+    --line:rgba(31,30,26,.08);
+    --shadow:0 1px 2px rgba(31,30,26,.05), 0 10px 30px rgba(31,30,26,.07);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page { max-width:640px; margin:0 auto; padding:0 16px 40px; }
+  a:focus-visible { outline:2px solid var(--brand); outline-offset:2px; border-radius:14px; }
+
+  /* app-style green hero */
+  .hero { margin:0 -16px; padding:42px 22px 54px; background:linear-gradient(165deg,#17754a 0%,#10593a 58%,#0c4a30 100%); border-radius:0 0 24px 24px; }
+  .hero-top { display:flex; align-items:flex-end; justify-content:space-between; max-width:608px; margin:0 auto 16px; }
+  .hero h1 { font-size:27px; font-weight:800; letter-spacing:-.4px; line-height:1.2; color:#fff; }
+  .hero p { font-size:12.5px; color:rgba(255,255,255,.66); margin-top:6px; letter-spacing:.05em; }
+  .hero .mark { width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; flex-shrink:0; backdrop-filter:blur(4px); }
+
+  /* banner */
+  .banner { display:block; position:relative; margin:-32px auto 14px; max-width:608px; border-radius:16px; overflow:hidden; box-shadow:0 8px 26px rgba(12,42,28,.22); text-decoration:none; }
+  .banner img { width:100%; aspect-ratio:21/8; object-fit:cover; display:block; }
+  .banner::after { content:''; position:absolute; inset:0; background:linear-gradient(88deg, rgba(10,34,22,.74) 0%, rgba(10,34,22,.34) 52%, rgba(10,34,22,.05) 100%); }
+  .banner-txt { position:absolute; left:18px; bottom:14px; z-index:2; color:#fff; }
+  .banner-txt b { display:block; font-size:17px; font-weight:800; letter-spacing:.02em; }
+  .banner-txt span { display:block; font-size:11.5px; color:rgba(255,255,255,.82); margin-top:4px; letter-spacing:.08em; }
+
+  /* overview stats — single card */
+  .stats { display:flex; background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:13px 0; margin:0 2px 14px; }
+  .stat { flex:1; text-align:center; position:relative; }
+  .stat + .stat::before { content:''; position:absolute; left:0; top:22%; height:56%; width:1px; background:var(--line); }
+  .stat b { display:block; font-size:19px; font-weight:800; letter-spacing:-.3px; font-feature-settings:"tnum"; color:var(--ink); }
+  .stat b i { font-style:normal; font-size:11px; font-weight:400; color:var(--ink-3); }
+  .stat.vac b { color:var(--brand); }
+  .stat.rent b { color:var(--price); }
+  .stat span { display:block; font-size:11px; color:var(--ink-3); margin-top:3px; }
+
+  .toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 14px; }
+  .tabs { display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex-shrink:0; font-size:13px; font-weight:500; color:var(--ink-2); background:var(--surface); border:none; border-radius:999px; padding:7px 15px; text-decoration:none; box-shadow:var(--shadow); transition:all .2s var(--ease); }
+  .tab.on { background:var(--brand); color:#fff; font-weight:600; box-shadow:0 4px 12px rgba(20,108,67,.28); }
+  .sortsel { position:relative; flex-shrink:0; }
+  .sortsel select { appearance:none; -webkit-appearance:none; font-family:inherit; font-size:13px; font-weight:500; color:var(--ink); background:var(--surface); border:none; border-radius:999px; padding:7px 30px 7px 15px; box-shadow:var(--shadow); outline:none; cursor:pointer; }
+  .sortsel::after { content:''; position:absolute; right:13px; top:50%; width:7px; height:7px; border-right:1.8px solid var(--ink-3); border-bottom:1.8px solid var(--ink-3); transform:translateY(-70%) rotate(45deg); pointer-events:none; }
+  .list-note { font-size:12px; color:var(--ink-3); margin:0 6px 12px; }
+
+  .card { display:block; text-decoration:none; color:inherit; background:var(--surface); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); margin-bottom:16px; transition:transform .25s var(--ease); opacity:0; transform:translateY(16px); animation:rise .6s var(--ease) forwards; animation-delay:var(--d, 0s); }
+  .card:active { transform:scale(.98); }
+  @keyframes rise { to { opacity:1; transform:translateY(0); } }
+  .thumb { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#e9e7e1; transition:filter .35s var(--ease); }
+  .thumbwrap { position:relative; overflow:hidden; background:#e9e7e1; }
+  .thumbwrap .thumb.is-rented { filter:grayscale(.85) brightness(.92); }
+  .t-pill { position:absolute; top:12px; left:12px; z-index:2; font-size:11px; padding:3px 10px; border-radius:999px; font-weight:500; backdrop-filter:blur(6px); }
+  .t-pill-open { background:rgba(20,108,67,.82); color:#fff; }
+  .t-pill-rented { background:rgba(17,17,17,.6); color:#fff; }
+  .t-meta { position:absolute; bottom:10px; right:12px; z-index:2; display:flex; gap:6px; }
+  .t-badge { font-size:11px; padding:2px 8px; border-radius:999px; background:rgba(17,17,17,.5); color:#fff; backdrop-filter:blur(6px); font-feature-settings:"tnum"; }
+  .t-badge.vid { display:flex; align-items:center; gap:4px; }
+  .thumb-ph { display:flex; align-items:center; justify-content:center; color:rgba(31,30,26,.18); }
+  .body { padding:15px 17px 17px; }
+  .row1 { display:flex; align-items:center; gap:8px; }
+  .name { font-size:17px; font-weight:700; letter-spacing:-.2px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pill { font-size:11px; padding:2px 9px; border-radius:999px; font-weight:500; flex-shrink:0; }
+  .pill-open { background:var(--brand-soft); color:var(--brand); }
+  .pill-rented { background:#fdeceb; color:var(--price); }
+  .addr { display:flex; align-items:center; gap:5px; margin-top:7px; font-size:13px; color:var(--ink-3); overflow:hidden; }
+  .addr svg { flex-shrink:0; }
+  .addr span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .specs { font-size:13px; color:var(--ink-3); margin-top:4px; font-feature-settings:"tnum"; }
+  .row3 { display:flex; align-items:baseline; margin-top:11px; }
+  .price { font-size:20px; font-weight:800; color:var(--price); letter-spacing:-.3px; font-feature-settings:"tnum"; }
+  .price small { font-size:12px; font-weight:400; color:var(--ink-3); margin-left:3px; }
+  .go { margin-left:auto; font-size:13px; color:var(--brand); font-weight:600; display:flex; align-items:center; gap:2px; }
+
+  .empty { text-align:center; padding:120px 24px 0; }
+  .empty svg { color:rgba(31,30,26,.14); }
+  .empty p { font-size:15px; color:var(--ink-3); margin-top:14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card { opacity:1; transform:none; animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>温溪房源</h1>
+        <p>温溪镇真实房源 · 扫码即看</p>
+      </div>
+      <div class="mark">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="banner">
+    <img src="/static/banner.jpg" alt="温溪镇实景">
+    <div class="banner-txt">
+      <b>温溪真房源 · 实拍实价</b>
+      <span>扫码看房 · 房东直租 · 视频看房</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat vac"><b>{{ stats.vacant }}</b><span>可租</span></div>
+    <div class="stat rent"><b>{{ stats.rented }}</b><span>已出租</span></div>
+    <div class="stat"><b>{{ stats.avg_price }}<i> 元/月</i></b><span>可租均价</span></div>
+    <div class="stat"><b>{{ stats.total }}<i> 套</i></b><span>全部房源</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <a class="tab{{ ' on' if status == 'all' }}" href="{{ url_for('index', status='all', sort=sort, q=q) }}">全部 {{ stats.total }}</a>
+      <a class="tab{{ ' on' if status == 'vacant' }}" href="{{ url_for('index', status='vacant', sort=sort, q=q) }}">可租</a>
+      <a class="tab{{ ' on' if status == 'rented' }}" href="{{ url_for('index', status='rented', sort=sort, q=q) }}">已出租</a>
+    </div>
+    <div class="sortsel">
+      <select id="sortSel" aria-label="排序方式">
+        <option value="default" {{ 'selected' if sort == 'default' }}>默认排序</option>
+        <option value="price_asc" {{ 'selected' if sort == 'price_asc' }}>价格从低到高</option>
+        <option value="price_desc" {{ 'selected' if sort == 'price_desc' }}>价格从高到低</option>
+        <option value="area_desc" {{ 'selected' if sort == 'area_desc' }}>面积从大到小</option>
+        <option value="area_asc" {{ 'selected' if sort == 'area_asc' }}>面积从小到大</option>
+      </select>
+    </div>
+  </div>
+
+  {% if q %}
+  <div class="list-note">搜索"{{ q }}"：{{ props|length }} 套符合条件</div>
+  {% elif status != 'all' or sort != 'default' %}
+  <div class="list-note">共 {{ props|length }} 套符合条件</div>
+  {% endif %}
+
+  {% for p in props %}
+  <a class="card" style="--d:{{ loop.index0 * 0.07 }}s" href="{{ url_for('landing', pid=p.id) }}">
+    <div class="thumbwrap">
+      {% if p.thumb_v %}
+      <img class="thumb{{ ' is-rented' if p.status == 'rented' }}" src="/media/{{ p.id }}/photo_1.jpg?v={{ p.thumb_v }}" alt="{{ p.name }}" loading="{{ 'eager' if loop.first else 'lazy' }}">
+      {% else %}
+      <div class="thumb thumb-ph"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+      {% endif %}
+      {% if p.status == 'rented' %}
+      <span class="t-pill t-pill-rented">已出租</span>
+      {% else %}
+      <span class="t-pill t-pill-open">可租</span>
+      {% endif %}
+      {% set photo_n = p.media_count - p.video_count %}
+      {% if photo_n > 0 or p.video_count > 0 %}
+      <div class="t-meta">
+        {% if p.video_count > 0 %}
+        <span class="t-badge vid">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72c0 .8.87 1.3 1.56.88l10.54-6.86a1.05 1.05 0 0 0 0-1.76L9.56 4.26A1.04 1.04 0 0 0 8 5.14z"/></svg>视频
+        </span>
+        {% endif %}
+        {% if photo_n > 0 %}<span class="t-badge">{{ photo_n }}图</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="body">
+      <div class="row1">
+        <span class="name">{{ p.name }}</span>
+      </div>
+      {% if p.address %}
+      <div class="addr">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>{{ p.address }}</span>
+      </div>
+      {% endif %}
+      {% set bits = [ p.layout, (p.area ~ '㎡') if p.area else '', p.orientation ] | reject('equalto', '') | list %}
+      {% if bits %}
+      <div class="specs">{{ bits | join(' · ') }}</div>
+      {% endif %}
+      <div class="row3">
+        {% if p.price %}<span class="price">{{ p.price }}<small>元/月</small></span>{% endif %}
+        <span class="go">查看
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </span>
+      </div>
+    </div>
+  </a>
+  {% else %}
+  <div class="empty">
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+    <p>{{ '没有找到相关房源，换个关键词试试' if q else '没有符合条件的房源' }}</p>
+  </div>
+  {% endfor %}
+
+</div>
+<script>
+document.getElementById('sortSel').addEventListener('change', function() {
+  var params = new URLSearchParams(location.search);
+  params.set('sort', this.value);
+  location.href = location.pathname + '?' + params.toString();
+});
+</script>
+</body>
+</html>
