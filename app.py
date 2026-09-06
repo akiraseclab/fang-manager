@@ -57,6 +57,10 @@ AMENITY_MAP = {a["key"]: a for a in AMENITIES}
 app = Flask(__name__)
 # 不限制上传大小（nginx 侧 client_max_body_size 0 配合）
 app.config["MAX_CONTENT_LENGTH"] = None
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# 生产（HTTPS）设 SESSION_SECURE=1 开启 Secure 标记；本地 HTTP 开发默认关闭
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_SECURE") == "1"
 
 with open(SECRET_PATH) as f:
     lines = f.readlines()
@@ -536,10 +540,14 @@ def qr(pid):
 
 @app.route("/media/<int:pid>/<path:filename>")
 def media(pid, filename):
-    path = os.path.join(MEDIA_ROOT, str(pid), filename)
-    if not os.path.isfile(path):
+    # 路径穿越防护：realpath 域限制，目标必须仍位于本房源媒体目录内
+    base = os.path.realpath(os.path.join(MEDIA_ROOT, str(pid)))
+    target = os.path.realpath(os.path.join(base, filename))
+    if target != base and not target.startswith(base + os.sep):
         abort(404)
-    return send_file(path)
+    if not os.path.isfile(target):
+        abort(404)
+    return send_file(target)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -689,8 +697,12 @@ def remove_wechat_qr():
 
 @app.route("/wxqr/<int:lid>")
 def wechat_qr_image(lid):
+    # 防枚举：仅名下有在架房源的房东可访问其二维码
+    with db() as conn:
+        active = conn.execute(
+            "SELECT 1 FROM properties WHERE landlord_id=? LIMIT 1", (lid,)).fetchone()
     path = _qr_path(lid)
-    if not os.path.isfile(path):
+    if not active or not os.path.isfile(path):
         abort(404)
     return send_file(path, mimetype="image/jpeg", max_age=300)
 
