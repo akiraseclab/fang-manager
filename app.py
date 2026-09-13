@@ -11,7 +11,7 @@ import urllib.request
 from datetime import date
 from email.mime.text import MIMEText
 
-from flask import (Flask, abort, redirect, render_template, request,
+from flask import (Flask, abort, flash, redirect, render_template, request,
                    send_file, session, url_for)
 from PIL import Image
 from werkzeug.security import check_password_hash, generate_password_hash
